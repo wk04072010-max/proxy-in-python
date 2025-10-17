@@ -13,18 +13,18 @@ from bs4 import BeautifulSoup
 from werkzeug.middleware.proxy_fix import ProxyFix
 from collections import defaultdict
 
-# --- 設定（環境変数で上書き可能） ---
+# --- 設定 ---
 PORT = int(os.environ.get("PORT", 8080))
-BASIC_USER = os.environ.get("BASIC_USER")   # set on Render
+BASIC_USER = os.environ.get("BASIC_USER")
 BASIC_PASS = os.environ.get("BASIC_PASS")
-ALLOW_HOSTS = os.environ.get("ALLOW_HOSTS")  # カンマ区切りでホワイトリスト（任意）
+ALLOW_HOSTS = os.environ.get("ALLOW_HOSTS")
 REQUEST_TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT", "15"))
 RATE_LIMIT_PER_MIN = int(os.environ.get("RATE_LIMIT_PER_MIN", "120"))
 
-# 変更・追加: ブロック回避用ランダムパス
+# ランダム化パス（元々/proxyと両対応）
 PROXY_PATH = os.environ.get("PROXY_PATH", "/" + secrets.token_hex(4))
 
-# 変更・追加: デフォルトヘッダ偽装
+# デフォルトヘッダ偽装
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -35,7 +35,7 @@ DEFAULT_HEADERS = {
 app = Flask(__name__, static_folder=None)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
-visits = defaultdict(list)  # ip -> [timestamps]
+visits = defaultdict(list)
 
 def rate_limited(ip):
     now = time.time()
@@ -61,9 +61,8 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        if auth:
-            if check_auth(auth.username, auth.password):
-                return f(*args, **kwargs)
+        if auth and check_auth(auth.username, auth.password):
+            return f(*args, **kwargs)
         return authenticate()
     return decorated
 
@@ -86,9 +85,7 @@ def stream_response(resp):
     headers = [(k, v) for k, v in resp.raw.headers.items() if k.lower() not in excluded]
     return Response(resp.raw, status=resp.status_code, headers=dict(headers))
 
-# -------------------------
-# 追加: 静的/バイナリ資源中継
-# -------------------------
+# 静的/バイナリ資源中継
 @app.route("/asset")
 def asset():
     raw_url = request.args.get("url")
@@ -119,9 +116,6 @@ def proxyify_url(u: str) -> str:
     )):
         return "/asset?url=" + quote(u, safe='')
     return make_proxy_url(u)
-# -------------------------
-# 追加ここまで
-# -------------------------
 
 @app.route("/", methods=["GET", "POST"])
 @requires_auth
@@ -137,10 +131,16 @@ def index():
         return redirect(make_proxy_url(target))
     return render_template("index.html")
 
-# 変更: プロキシURLをランダム化
+# ランダム化パス
 @app.route(PROXY_PATH, methods=["GET", "POST"])
 @requires_auth
 def proxy_alias():
+    return proxy()
+
+# 互換用固定 /proxy パス（古いURLや手入力向け）
+@app.route("/proxy", methods=["GET", "POST"])
+@requires_auth
+def proxy_legacy():
     return proxy()
 
 def proxy():
@@ -156,8 +156,6 @@ def proxy():
         return "Host not allowed", 403
 
     session_req = requests.Session()
-
-    # 変更: ヘッダ偽装
     headers = DEFAULT_HEADERS.copy()
     for h in ["User-Agent", "Accept", "Accept-Language"]:
         if request.headers.get(h):
