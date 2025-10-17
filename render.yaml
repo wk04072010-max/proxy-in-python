@@ -1,18 +1,22 @@
-# render.yaml
 services:
   - type: web
-    name: render-proxy
-    env: docker
-    dockerfilePath: Dockerfile
-    plan: starter
-    autoDeploy: true
+    name: secure-proxy
+    env: python
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:8080 app:app
     envVars:
       - key: BASIC_USER
-        value: youruser
         sync: false
       - key: BASIC_PASS
-        value: yourpass
+        sync: false
+      - key: PROXY_PATH
+        sync: false
+      - key: SECRET_KEY
         sync: false
       - key: ALLOW_HOSTS
-        value: ""
+        sync: false
+      - key: REQUEST_TIMEOUT
+        sync: false
+      - key: RATE_LIMIT_PER_MIN
         sync: false
