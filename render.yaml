@@ -1,0 +1,18 @@
+# render.yaml
+services:
+  - type: web
+    name: render-proxy
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: BASIC_USER
+        value: youruser
+        sync: false
+      - key: BASIC_PASS
+        value: yourpass
+        sync: false
+      - key: ALLOW_HOSTS
+        value: ""
+        sync: false
