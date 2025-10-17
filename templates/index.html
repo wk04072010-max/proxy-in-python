@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>Render Proxy</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP"; padding: 2rem; }
+    input[type="text"]{ width: 70%; padding: .6rem; font-size: 1rem; }
+    button{ padding: .6rem 1rem; font-size: 1rem; }
+    .note{ margin-top: .8rem; color:#666; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <h2>🔁 Render Proxy</h2>
+  <form method="POST">
+    <input type="text" name="url" placeholder="https://example.com" required />
+    <button type="submit">Go</button>
+  </form>
+  <p class="note">注意: 公開プロキシにする場合は必ず BasicAuth とアクセス制限を有効にしてください。</p>
+</body>
+</html>
